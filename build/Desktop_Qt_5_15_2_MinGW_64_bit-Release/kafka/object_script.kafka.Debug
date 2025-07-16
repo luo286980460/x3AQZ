@@ -1,0 +1,11 @@
+debug/main.o
+debug/myhttpserverkafka.o
+debug/mymainkafka.o
+debug/producer.o
+debug/producerworker.o
+debug/qaesencryption.o
+debug/moc_myhttpserverkafka.o
+debug/moc_mymainkafka.o
+debug/moc_producer.o
+debug/moc_producerworker.o
+debug/moc_qaesencryption.o

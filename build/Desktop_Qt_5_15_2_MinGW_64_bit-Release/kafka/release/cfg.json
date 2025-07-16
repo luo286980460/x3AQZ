@@ -1,0 +1,12 @@
+{
+	"httpServer":{
+		"port":23333
+	},
+	"kafka":{
+		"ipPort":"58.240.67.138:18543",
+		"topics":[
+			"LS_TEST1",
+			"LS_TEST2"
+		]
+	}
+}

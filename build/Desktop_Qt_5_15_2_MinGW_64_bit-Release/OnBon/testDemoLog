@@ -1,0 +1,26 @@
+[2025-06-30 09:37:14] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=, nSerialPortValueIndex=1, err=-1
+[2025-06-30 09:41:58] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.0.99, nPort=5005, ret=-1
+[2025-06-30 11:49:07] [TEST] [ERROR   ] # DEMO # send_recv_cmd_1K error! pIP=192.168.0.199, nPort=5005, DataLen=872, nSendResutl=-1
+[2025-06-30 15:39:24] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.0.199, nPort=5005, ret=-1
+[2025-06-30 15:40:14] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.1.176, nPort=5005, ret=-1
+[2025-07-01 11:14:37] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.1.176, nPort=5005, ret=-1
+[2025-07-01 11:29:14] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.1.176, nPort=5005, ret=-1
+[2025-07-01 11:30:05] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.1.176, nPort=5005, ret=-1
+[2025-07-01 11:31:13] [TEST] [ERROR   ] # DEMO # cmd_tcpPing run error! pIP=192.168.1.176, nPort=5005, ret=-1
+[2025-07-01 13:37:48] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=1, err=-1
+[2025-07-01 13:38:24] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=1, err=-1
+[2025-07-01 13:41:02] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=1, err=-1
+[2025-07-01 13:41:55] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=1, err=-1
+[2025-07-01 13:45:54] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=1, err=-1
+[2025-07-01 13:47:56] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-01 14:18:01] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-01 14:21:13] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-01 15:24:05] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=, nSerialPortValueIndex=2, err=-1
+[2025-07-01 16:43:02] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:09:44] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:10:00] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:10:37] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:16:25] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:23:07] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-02 14:23:21] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1
+[2025-07-04 11:57:56] [TEST] [ERROR   ] # DEMO # oSerialClient.init error! pSerialPort=COM6, nSerialPortValueIndex=2, err=-1

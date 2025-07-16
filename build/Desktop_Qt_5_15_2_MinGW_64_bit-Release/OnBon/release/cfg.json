@@ -1,0 +1,8 @@
+{
+	"httpServer":{
+		"port":23332
+	},
+	"screen":{
+		"portName":"COM6"
+	}
+}

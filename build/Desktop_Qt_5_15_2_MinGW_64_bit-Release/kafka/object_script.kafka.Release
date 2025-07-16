@@ -1,0 +1,11 @@
+release/main.o
+release/myhttpserverkafka.o
+release/mymainkafka.o
+release/producer.o
+release/producerworker.o
+release/qaesencryption.o
+release/moc_myhttpserverkafka.o
+release/moc_mymainkafka.o
+release/moc_producer.o
+release/moc_producerworker.o
+release/moc_qaesencryption.o

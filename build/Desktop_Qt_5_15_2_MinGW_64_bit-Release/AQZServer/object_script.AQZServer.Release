@@ -1,0 +1,17 @@
+release/detectionmode.o
+release/gps.o
+release/i2cmanager.o
+release/i2cmanagerworker.o
+release/main.o
+release/myhttpserver.o
+release/mymain.o
+release/qaesencryption.o
+release/radar.o
+release/moc_detectionmode.o
+release/moc_gps.o
+release/moc_i2cmanager.o
+release/moc_i2cmanagerworker.o
+release/moc_myhttpserver.o
+release/moc_mymain.o
+release/moc_qaesencryption.o
+release/moc_radar.o

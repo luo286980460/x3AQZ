@@ -1,0 +1,17 @@
+debug/detectionmode.o
+debug/gps.o
+debug/i2cmanager.o
+debug/i2cmanagerworker.o
+debug/main.o
+debug/myhttpserver.o
+debug/mymain.o
+debug/qaesencryption.o
+debug/radar.o
+debug/moc_detectionmode.o
+debug/moc_gps.o
+debug/moc_i2cmanager.o
+debug/moc_i2cmanagerworker.o
+debug/moc_myhttpserver.o
+debug/moc_mymain.o
+debug/moc_qaesencryption.o
+debug/moc_radar.o
