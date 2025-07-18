@@ -16,7 +16,9 @@
 #include "myhttpserver.h"
 #include "radar.h"
 
-#define CFG_JSON    "/cfg.json"
+#define CFG_JSON        "/cfg.json"
+#define TEXT_2_DYNAMIC  "/screen/text2Dynamic"      // 发送动态区节目接口
+#define TEXT_2_STATIC   "/screen/text2Static"       // 发送静态区节目接口
 
 MyMain::MyMain(QObject *parent)
     : QObject{parent}
@@ -47,7 +49,7 @@ MyMain::MyMain(QObject *parent)
 
 void MyMain::initTimer()
 {
-    m_timer = new QTimer;
+    m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, [this]{
         // 心跳
         m_heartBeatCount++;
@@ -70,7 +72,7 @@ void MyMain::initTimer()
         }else if(m_back2DefaultProgramTimeCount == m_back2DefaultProgramTime){
             sendPostRequestOnbonDefaultProgream();
             m_back2DefaultProgramTimeCount++;
-            m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT;
+            m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT_PROGRAM;
         }
 
         // qDebug() << "post:" << json;
@@ -114,6 +116,9 @@ void MyMain::init()
     if(m_radar && m_detectionMode){
         connect(m_radar, &Radar::signalUpdateDetectionModeProgram, m_detectionMode, &DetectionMode::slotUpdateDetectionModeProgram);
     }
+
+    // 清空节目 然后 更新默认节目
+    sendPostRequestOnbonDefaultProgream();
 }
 
 bool MyMain::loadCfg(QJsonObject& cfgJson)
@@ -262,6 +267,20 @@ bool MyMain::httpServerCfgIsOk(QJsonObject &cfgHttpServer)
 
 bool MyMain::radarCfgIsOk(QJsonObject &cfgRadar)
 {
+    // 检查属性 cfgRadar-> work
+    if(cfgRadar.find("work") == cfgRadar.end()){
+        qCritical() << "配置文件Radar->otherProgram 属性内 缺少 work 类型 bool";
+        return false;
+    }else if(!cfgRadar.value("work").isBool()){
+        qCritical() << "配置文件Radar->otherProgram 属性内 work 类型错误 类型应为 bool";
+        return false;
+    }
+
+    if(!cfgRadar.value("work").toBool()){
+        qCritical() << "雷达模块不器用";
+        return false;
+    }
+
     // 检查属性 portName
     if(cfgRadar.find("portName") == cfgRadar.end()){
         qCritical() << "配置文件Radar属性内 缺少portName 类型string";
@@ -299,94 +318,94 @@ bool MyMain::radarCfgIsOk(QJsonObject &cfgRadar)
 
     // 检查属性 ownProgram -> normalContent
     if(ownProgramJson.find("normalContent") == ownProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 normalContent 类型string";
+        qCritical() << "配置文件Radar->ownProgram 属性内 normalContent 类型string";
         return false;
     }else if(!ownProgramJson.value("normalContent").isString()){
-        qCritical() << "配置文件Radar属性内 normalContent 类型错误 类型应为string";
+        qCritical() << "配置文件Radar->ownProgram 属性内 normalContent 类型错误 类型应为string";
         return false;
     }else if(ownProgramJson.value("normalContent").toString().size() != 4){
-        qCritical() << "配置文件Radar属性内 normalContent 数量错误 只能为4个字";
+        qCritical() << "配置文件Radar->ownProgram 属性内 normalContent 数量错误 只能为4个字";
         return false;
     }
 
     // 检查属性 ownProgram -> speedingContent
     if(ownProgramJson.find("speedingContent") == ownProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 speedingContent 类型string";
+        qCritical() << "配置文件Radar->ownProgram 属性内 speedingContent 类型string";
         return false;
     }else if(!ownProgramJson.value("speedingContent").isString()){
-        qCritical() << "配置文件Radar属性内 speedingContent 类型错误 类型应为string";
+        qCritical() << "配置文件Radar->ownProgram 属性内 speedingContent 类型错误 类型应为string";
         return false;
     }else if(ownProgramJson.value("speedingContent").toString().size() != 4){
-        qCritical() << "配置文件Radar属性内 speedingContent 数量错误 只能为4个字";
+        qCritical() << "配置文件Radar->ownProgram 属性内 speedingContent 数量错误 只能为4个字";
         return false;
     }
 
     // 检查属性 ownProgram -> normalContentColor
     if(ownProgramJson.find("normalContentColor") == ownProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 缺少normalContentColor 类型int";
+        qCritical() << "配置文件Radar->ownProgram 属性内 缺少normalContentColor 类型int";
         return false;
     }else if(!ownProgramJson.value("normalContentColor").isDouble()){
-        qCritical() << "配置文件Radar属性内 normalContentColor类型错误 类型应为int";
+        qCritical() << "配置文件Radar->ownProgram 属性内 normalContentColor类型错误 类型应为int";
         return false;
     }else if(ownProgramJson.value("normalContentColor").toInt() < 1 || ownProgramJson.value("normalContentColor").toInt() > 3){
-        qCritical() << "配置文件Radar属性内 normalContentColor值错误 1-红 2-绿 3-黄";
+        qCritical() << "配置文件Radar->ownProgram 属性内 normalContentColor值错误 1-红 2-绿 3-黄";
         return false;
     }
 
     // 检查属性 ownProgram -> speedingContentColor
     if(ownProgramJson.find("speedingContentColor") == ownProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 缺少 speedingContentColor 类型int";
+        qCritical() << "配置文件Radar->ownProgram 属性内 缺少 speedingContentColor 类型int";
         return false;
     }else if(!ownProgramJson.value("speedingContentColor").isDouble()){
-        qCritical() << "配置文件Radar属性内 speedingContentColor 类型错误 类型应为int";
+        qCritical() << "配置文件Radar->ownProgram 属性内 speedingContentColor 类型错误 类型应为int";
         return false;
     }else if(ownProgramJson.value("speedingContentColor").toInt() < 1 || ownProgramJson.value("speedingContentColor").toInt() > 3){
-        qCritical() << "配置文件Radar属性内 speedingContentColor 值错误 1-红 2-绿 3-黄";
+        qCritical() << "配置文件Radar->ownProgram 属性内 speedingContentColor 值错误 1-红 2-绿 3-黄";
         return false;
     }
 
     // 检查属性 otherProgram
     if(cfgRadar.find("otherProgram") == cfgRadar.end()){
-        qCritical() << "配置文件Radar属性内 otherProgram 类型json";
+        qCritical() << "配置文件Radar 属性内 otherProgram 类型json";
         return false;
     }else if(!cfgRadar.value("otherProgram").isObject()){
-        qCritical() << "配置文件Radar属性内 otherProgram 类型错误 类型应为json";
+        qCritical() << "配置文件Radar 属性内 otherProgram 类型错误 类型应为json";
         return false;
     }
-    QJsonObject otherProgramJson = cfgRadar.value("ownProgram").toObject();
+    QJsonObject otherProgramJson = cfgRadar.value("otherProgram").toObject();
 
 
     // 检查属性 otherProgram -> content
     if(otherProgramJson.find("content") == otherProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 content 类型string";
+        qCritical() << "配置文件Radar->otherProgram 属性内 content 类型string";
         return false;
     }else if(!otherProgramJson.value("content").isString()){
-        qCritical() << "配置文件Radar属性内 content 类型错误 类型应为string";
+        qCritical() << "配置文件Radar->otherProgram 属性内 content 类型错误 类型应为string";
         return false;
     }else if(otherProgramJson.value("content").toString().size() != 4){
-        qCritical() << "配置文件Radar属性内 content 数量错误 只能为4个字";
+        qCritical() << "配置文件Radar->otherProgram 属性内 content 数量错误 只能为4个字";
         return false;
     }
 
     // 检查属性 otherProgram -> color
     if(otherProgramJson.find("color") == otherProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 缺少 color 类型int";
+        qCritical() << "配置文件Radar->otherProgram 属性内 缺少 color 类型int";
         return false;
     }else if(!otherProgramJson.value("color").isDouble()){
-        qCritical() << "配置文件Radar属性内 color 类型错误 类型应为int";
+        qCritical() << "配置文件Radar->otherProgram 属性内 color 类型错误 类型应为int";
         return false;
     }else if(otherProgramJson.value("color").toInt() < 1 || otherProgramJson.value("color").toInt() > 3){
-        qCritical() << "配置文件Radar属性内 color 值错误 1-红 2-绿 3-黄";
+        qCritical() << "配置文件Radar->otherProgram 属性内 color 值错误 1-红 2-绿 3-黄";
         return false;
     }
 
 
     // 检查属性 otherProgram -> signalScreen
-    if(otherProgramJson.find("signalScreen") == otherProgramJson.end()){
-        qCritical() << "配置文件Radar属性内 缺少 signalScreen 类型 bool";
+    if(otherProgramJson.find("singleScreen") == otherProgramJson.end()){
+        qCritical() << "配置文件Radar->otherProgram 属性内 缺少 singleScreen 类型 bool";
         return false;
-    }else if(!otherProgramJson.value("signalScreen").isDouble()){
-        qCritical() << "配置文件Radar属性内 signalScreen 类型错误 类型应为 bool";
+    }else if(!otherProgramJson.value("singleScreen").isBool()){
+        qCritical() << "配置文件Radar->otherProgram 属性内 singleScreen 类型错误 类型应为 bool";
         return false;
     }
 
@@ -468,13 +487,23 @@ bool MyMain::detectionModeCfgIsOk(QJsonObject &cfgDetectionMode)
     }
     int detectionMode = cfgDetectionMode.value("detectionMode").toInt();
     if(detectionMode != 0 && detectionMode != 1 && detectionMode != 2){
-        qCritical() << "配置文件DetectionMode属性内 detectionMode值异常 0-行人/1-车/3-不做多端";
+        qCritical() << "配置文件DetectionMode属性内 detectionMode值异常 0-主机/1-从机/2-不做多端";
         return false;
     }
     if(detectionMode == 2){
         qCritical() << "多端模块已关闭";
         return false;
     }
+
+    // 检查属性 loopTimer
+    if(cfgDetectionMode.find("loopTimer") == cfgDetectionMode.end()){
+        qDebug() << "配置文件 DetectionMode 属性内 缺少 loopTimer 类型int";
+        return false;
+    }else if(!cfgDetectionMode.value("loopTimer").isDouble()){
+        qDebug() << "配置文件 DetectionMode 属性内 loopTimer 类型错误 类型应为int";
+        return false;
+    }
+
 
     return true;
 }
@@ -511,6 +540,8 @@ void MyMain::initHttpServer(QJsonObject &cfgHttpServer)
 {
     m_httpserver = new MyHttpServer(cfgHttpServer, this);
     connect(m_httpserver, &MyHttpServer::signalOpenControl, this, &MyMain::slotOpenControl);
+    connect(m_httpserver, &MyHttpServer::signalSetDefaultProgam, this, &MyMain::slotSetDefaultProgam);
+    SetDefaultProgam(cfgHttpServer);
 }
 
 void MyMain::initRadar(QJsonObject &cfgRadar)
@@ -548,39 +579,11 @@ void MyMain::initGps(QJsonObject &cfgGps)
 
 void MyMain::sendPostRequestKafka(QJsonObject &json)
 {
-    QNetworkAccessManager *manager = new QNetworkAccessManager();
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
     // 设置请求 URL 和 headers
     QNetworkRequest request;
     request.setUrl(QUrl(QString("http://127.0.0.1:%1/kafka/producer").arg(m_kafkaServerPort)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-    qDebug() << json;
-    // 发送 POST 请求
-    QNetworkReply *reply = manager->post(request, QJsonDocument(json).toJson());
-
-    // 异步处理响应
-    QObject::connect(reply, &QNetworkReply::finished, [=]() {
-        if (reply->error() == QNetworkReply::NoError) {
-            qDebug() << "Response:" << reply->readAll();
-        } else {
-            qDebug() << "Error:" << reply->errorString();
-        }
-        reply->deleteLater();
-        manager->deleteLater();
-    });
-}
-
-void MyMain::sendPostRequestOnbon(QJsonObject &json)
-{
-    // 重置恢复默认节目的计数
-    m_back2DefaultProgramTimeCount = 0;
-
-    QNetworkAccessManager *manager = new QNetworkAccessManager();
-
-    // 设置请求 URL 和 headers
-    QNetworkRequest request;
-    request.setUrl(QUrl(QString("http://127.0.0.1:%1/screen/text2Dynamic").arg(m_onbonServerPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     // qDebug() << json;
@@ -591,7 +594,36 @@ void MyMain::sendPostRequestOnbon(QJsonObject &json)
     QObject::connect(reply, &QNetworkReply::finished, [=]() {
         if (reply->error() == QNetworkReply::NoError) {
             // qDebug() << "Response:" << reply->readAll();
-            qDebug() << "Response: success";
+            // qDebug() << "Response: success";
+        } else {
+            qDebug() << "Error:" << reply->errorString();
+        }
+        reply->deleteLater();
+        manager->deleteLater();
+    });
+}
+
+void MyMain::sendPostRequestOnbon(QJsonObject &json, QString api)
+{
+    // 重置恢复默认节目的计数
+    m_back2DefaultProgramTimeCount = 0;
+
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+
+    // 设置请求 URL 和 headers
+    QNetworkRequest request;
+    request.setUrl(QUrl(QString("http://127.0.0.1:%1%2").arg(m_onbonServerPort).arg(api)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    // qDebug() << json;
+    // 发送 POST 请求
+    QNetworkReply *reply = manager->post(request, QJsonDocument(json).toJson());
+
+    // 异步处理响应
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            // qDebug() << "Response:" << reply->readAll();
+            // qDebug() << "Response: success";
         } else {
             // qDebug() << "Error:" << reply->errorString();
             qDebug() << "Error: failed";
@@ -607,7 +639,7 @@ void MyMain::sendPostRequestOnbonDefaultProgream()
     jsonData.insert("nBaudRateIndex", 2);
     jsonData.insert("areaId", 255);
 
-    QNetworkAccessManager *manager = new QNetworkAccessManager();
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
     // 设置请求 URL 和 headers
     QNetworkRequest request;
@@ -622,7 +654,7 @@ void MyMain::sendPostRequestOnbonDefaultProgream()
     QObject::connect(reply, &QNetworkReply::finished, [=]() {
         if (reply->error() == QNetworkReply::NoError) {
             // qDebug() << "Response:" << reply->readAll();
-            qDebug() << "Response: success";
+            // qDebug() << "Response: success";
         } else {
             // qDebug() << "Error:" << reply->errorString();
             qDebug() << "Error: failed";
@@ -632,29 +664,45 @@ void MyMain::sendPostRequestOnbonDefaultProgream()
     });
 }
 
+void MyMain::SetDefaultProgam(QJsonObject &cfgHttpServer)
+{
+    QJsonObject backJson;
+    backJson.insert("error", 1);
+    QJsonObject jsonProgram = cfgHttpServer.value("defaultProgram").toObject();
+    QJsonObject jsonProgramData;
+    if(m_httpserver){
+        jsonProgramData = m_httpserver->parseScreenOpenControl(jsonProgram, backJson);
+    }
+
+    sendPostRequestOnbon(jsonProgramData, TEXT_2_STATIC);
+}
+
 void MyMain::slotOpenControl(QByteArray jsonData, bool open)
 {
     // 关闭管控
     if(!open){
-        m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT;
+        m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT_PROGRAM;
         m_back2DefaultProgramTimeCount = m_back2DefaultProgramTime;
-        m_data2BackServerHeartbeat["controlState"] = false;
+        m_controlState = false;
+        m_heartBeatCount = m_heartBeatInterval-1;
         return;
     }
 
     // 开启管控
     QJsonObject json = QJsonDocument::fromJson(jsonData).object();
     m_triggerScreenPriority = e_triggerScreenPriority::CONTROL;
-    m_back2DefaultProgramTimeCount = m_back2DefaultProgramTime+1;   // 管控不回默认节目
-    sendPostRequestOnbon(json);
-    m_data2BackServerHeartbeat["controlState"] = true;
+    sendPostRequestOnbonDefaultProgream();
+    sendPostRequestOnbon(json, TEXT_2_DYNAMIC);
+    m_controlState = true;
 
-    // e_triggerScreenPriority Priority = (e_triggerScreenPriority)json.value("Priority").toInt();
-    // if(m_triggerScreenPriority > Priority){
-    //     m_triggerScreenPriority = Priority;
-    //     m_back2DefaultProgramTimeCount = 0;
-    //     sendPostRequestOnbon(json);
-    // }
+    m_heartBeatCount = m_heartBeatInterval-1;
+    m_back2DefaultProgramTimeCount = m_back2DefaultProgramTime+1;   // 管控不回默认节目
+}
+
+void MyMain::slotSetDefaultProgam(QByteArray jsonData)
+{
+    QJsonObject json = QJsonDocument::fromJson(jsonData).object();
+    sendPostRequestOnbon(json, TEXT_2_STATIC);
 }
 
 void MyMain::slotPlayOtherLuaProgram(QByteArray jsonData)
@@ -753,11 +801,13 @@ void MyMain::slotPlayOtherLuaProgram(QByteArray jsonData)
     jsonDataP.insert("fontName", "等线");
     jsonDataP.insert("fontSize", fontSize);
     jsonDataP.insert("content", content);
+    jsonDataP.insert("Halign", 2);
+    jsonDataP.insert("Valign", 2);
     jsonDataP.insert("DisplayMode", 1);
     jsonDataP.insert("Speed", 1);
 
     m_back2DefaultProgramTimeCount = 0;   // 超时回默认节目
-    sendPostRequestOnbon(json);
+    sendPostRequestOnbon(json, TEXT_2_DYNAMIC);
     m_triggerScreenPriority = e_triggerScreenPriority::OTHER_LUA;
 }
 
@@ -794,7 +844,7 @@ void MyMain::slotSendSpeedProgram2OnbonUp(QString speed, int color)
     jsonData.insert("Valign", 2);
     jsonData.insert("DisplayMode", 1);
     jsonData.insert("Speed", 1);
-    sendPostRequestOnbon(jsonData);
+    sendPostRequestOnbon(jsonData, TEXT_2_DYNAMIC);
     m_triggerScreenPriority = e_triggerScreenPriority::RADAR;
 }
 
@@ -820,7 +870,7 @@ void MyMain::slotSendSpeedProgram2OnbonDown(QString content, int color)
     jsonData.insert("Valign", 2);
     jsonData.insert("DisplayMode", 1);
     jsonData.insert("Speed", 1);
-    sendPostRequestOnbon(jsonData);
+    sendPostRequestOnbon(jsonData, TEXT_2_DYNAMIC);
     m_triggerScreenPriority = e_triggerScreenPriority::RADAR;
 }
 

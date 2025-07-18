@@ -89,6 +89,12 @@ public slots:
                             QString content, int Halign, int Valign, int DisplayMode,
                             int Speed);
 
+    // 删除静态区
+    void slotDelStaticArea();
+
+    // 设置亮度
+    void slotSetLuminance(int  brightnessI);
+
 private:
     bool m_sdkInit = false;
     Ping_data* m_udpPingRetData = nullptr;      // udp ping回复

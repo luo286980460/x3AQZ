@@ -283,37 +283,37 @@ Producer *MyHttpServerKafka::getProducerFromTopic(const QString& topic)
 bool MyHttpServerKafka::missingParameterProducer(const QJsonObject& json, QJsonObject& backJson)
 {
 
-    backJson.find("code").value() = 1;
+    backJson["msg"] = 1;
     // topic
     if(json.find("topic") == json.end()) {
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "缺少必要参数 topic ";
+        backJson["msg"] = 1;
+        backJson["msg"] = "缺少必要参数 topic ";
         return true;
     }else if(!json.value("topic").isString()){
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "topic 数据类型错误 应该为 string";
+        backJson["msg"] = 1;
+        backJson["msg"] = "topic 数据类型错误 应该为 string";
         return true;
     }
 
     // key
     if(json.find("key") == json.end()) {
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "缺少必要参数 key ";
+        backJson["code"] = 1;
+        backJson["msg"] = "缺少必要参数 key ";
         return true;
     }else if(!json.value("key").isString()){
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "key 数据类型错误 应该为 string";
+        backJson["code"] = 1;
+        backJson["msg"] = "key 数据类型错误 应该为 string";
         return true;
     }
 
     // data
     if(json.find("data") == json.end()) {
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "缺少必要参数 data ";
+        backJson["code"] = 1;
+        backJson["msg"] = "缺少必要参数 data ";
         return true;
     }else if(!json.value("data").isObject()){
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "data 数据类型错误 应该为 json";
+        backJson["code"] = 1;
+        backJson["msg"] = "data 数据类型错误 应该为 json";
         return true;
     }
 
@@ -334,8 +334,8 @@ QJsonObject MyHttpServerKafka::parseLightProducer(const QJsonObject &json, QJson
         emit producer->signalProducerMsgJson(QJsonDocument(json.value("data").toObject()).toJson(),
                                              json.value("key").toString());
     }else{
-        backJson.find("code").value() = 1;
-        backJson.find("msg").value() = "producer 主题未找到 对象为空";
+        backJson["code"] = 1;
+        backJson["msg"] = "producer 主题未找到 对象为空";
         return backJson;
     }
 

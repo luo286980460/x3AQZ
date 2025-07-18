@@ -28,6 +28,8 @@ MyMainOnBon::MyMainOnBon(QObject *parent)
                     m_screen, &Screen::slotDynamicArea_DelArea_G5_Serial);
             connect(m_httpserver, &MyHttpServerOnBon::signalStaticProgram,
                     m_screen, &Screen::slotStaticProgram);
+            connect(m_httpserver, &MyHttpServerOnBon::signalSetLuminance,
+                    m_screen, &Screen::slotSetLuminance);
         }
     }
 }

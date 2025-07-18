@@ -41,7 +41,7 @@ private:
     s_ownProgram m_ownProgram;      // 雷达激活自身的节目
     s_otherProgram m_otherProgram;  // 雷达激活其他端的节目
     int m_speedingThreshold;        // 超速阈值
-    bool m_lastSpeedingState;       // 上次的超速状态
+    bool m_lastSpeedingState = true;       // 上次的超速状态
 };
 
 #endif // RADAR_H

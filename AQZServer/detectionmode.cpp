@@ -14,7 +14,7 @@ DetectionMode::DetectionMode(QJsonObject& cfgJson, QObject *parent)
 
 void DetectionMode::init(QJsonObject &cfgJson)
 {
-    m_serialPort = new QSerialPort;
+    m_serialPort = new QSerialPort(this);
     connect(m_serialPort, &QSerialPort::readyRead, this, &DetectionMode::slotRead);
     m_serialPort->setPortName(cfgJson.value("portName").toString());
     m_serialPort->setBaudRate(cfgJson.value("baudRate").toInt());

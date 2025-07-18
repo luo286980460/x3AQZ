@@ -54,9 +54,9 @@ void MyHttpServer::createHttpserver(int port)
         Q_UNUSED(req);
 
         QJsonObject backJson;
-        backJson.insert("time", "最后更新时间：2025年07月16日");
+        backJson.insert("time", "最后更新时间：2025年07月18日");
         backJson.insert("Name", "尤特斯安全桩服务");
-        backJson.insert("Version", "0.3.0");
+        backJson.insert("Version", "0.4.0");
         backJson.insert("Msg", "alpha");
 
         resp->content_type = APPLICATION_JSON;
@@ -101,7 +101,7 @@ void MyHttpServer::createHttpserver(int port)
         writer->End();
     });
 
-    m_router->POST("/screen/playTextProgram", [this](HttpRequest* req, HttpResponse* resp) {
+    m_router->POST("/screen/setDefaultProgam", [this](HttpRequest* req, HttpResponse* resp) {
 
         //获取json数据包
         QJsonDocument jsonDoc = QJsonDocument::fromJson(QString::fromStdString(req->body).toUtf8());
@@ -119,7 +119,10 @@ void MyHttpServer::createHttpserver(int port)
             return respReturnJson(resp, backJson);
         }
 
-        return respReturnJson(resp, parseScreenOpenControl(jsonObj, backJson));
+        QJsonObject jsonProgram = parseScreenOpenControl(jsonObj, backJson);
+        emit signalSetDefaultProgam(QJsonDocument(jsonProgram).toJson());
+
+        return respReturnJson(resp, backJson);
     });
 
     // 管控接口
@@ -141,11 +144,14 @@ void MyHttpServer::createHttpserver(int port)
             return respReturnJson(resp, backJson);
         }
 
-        return respReturnJson(resp, parseScreenOpenControl(jsonObj, backJson));
+        QJsonObject jsonProgram = parseScreenOpenControl(jsonObj, backJson);
+        emit signalOpenControl(QJsonDocument(jsonProgram).toJson(), true);
+
+        return respReturnJson(resp, backJson);
     });
 
     // 关闭管控接口
-    m_router->POST("/screen/closezuControl", [this](HttpRequest* req, HttpResponse* resp) {
+    m_router->POST("/screen/closeControl", [this](HttpRequest* req, HttpResponse* resp) {
 
         QJsonObject backJson;
         backJson["code"] = 200;
@@ -439,9 +445,10 @@ QJsonObject MyHttpServer::parseScreenOpenControl(const QJsonObject &json, QJsonO
     jsonData.insert("fontName", "等线");
     jsonData.insert("fontSize", fontSize);
     jsonData.insert("content", content);
-    jsonData.insert("DisplayMode", 1);
+    jsonData.insert("Halign", 2);
+    jsonData.insert("Valign", 2);
+    jsonData.insert("DisplayMode", 2);
     jsonData.insert("Speed", 1);
-    emit signalOpenControl(QJsonDocument(jsonData).toJson(), true);
 
-    return backJson;
+    return jsonData;
 }

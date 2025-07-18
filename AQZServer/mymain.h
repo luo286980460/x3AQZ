@@ -19,7 +19,7 @@ typedef enum {
     CONTROL,    // 管控触发
     OTHER_LUA,  // 他端lua触发
     RADAR,      // 本地雷达触发
-    DEFAULT,    // 默认节目
+    DEFAULT_PROGRAM,    // 默认节目
     ALL
 }e_triggerScreenPriority;
 
@@ -45,19 +45,21 @@ private:
     void initDetectionMode(QJsonObject& cfgDetectionMode);
     void initGps(QJsonObject& cfgGps);
     void sendPostRequestKafka(QJsonObject& json);
-    void sendPostRequestOnbon(QJsonObject& json);
-    void sendPostRequestOnbonDefaultProgream();
+    void sendPostRequestOnbon(QJsonObject& json, QString api);
+    void sendPostRequestOnbonDefaultProgream();     // 返回默认节目(清空动态区)
+    void SetDefaultProgam(QJsonObject& cfgHttpServer);  // 设置默认节目信息
 
 
 signals:
     void signalWrite2Kafka(QString strJson, QString strKey);
 
 public slots:
-    void slotOpenControl(QByteArray jsonData, bool open);
-    void slotPlayOtherLuaProgram(QByteArray jsonData);
-    void slotSendSpeedProgram2OnbonUp(QString speed, int color);
-    void slotSendSpeedProgram2OnbonDown(QString content, int color);
-    void slotUpdateGpsNE(QString N, QString E);
+    void slotOpenControl(QByteArray jsonData, bool open);           // 开启管控
+    void slotSetDefaultProgam(QByteArray jsonData);                 // 设置默认节目信息
+    void slotPlayOtherLuaProgram(QByteArray jsonData);              // 第三lura方激活的节目
+    void slotSendSpeedProgram2OnbonUp(QString speed, int color);    // 速度节目的数字(屏幕上半部分)
+    void slotSendSpeedProgram2OnbonDown(QString content, int color);// 速度节目的文字(屏幕下半部分)
+    void slotUpdateGpsNE(QString N, QString E);                     // 更新心跳包内位置信息
 
 private:
     MyHttpServer* m_httpserver = nullptr;

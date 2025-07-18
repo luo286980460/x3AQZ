@@ -638,3 +638,25 @@ void Screen::slotStaticProgram(int nBaudRateIndex, int color, int areaId, int ar
                                      program->fileType, program->fileLen, 1, program->fileAddre)) qDebug() << ("bxDual_cmd_ofsWriteFile2 error");
     if(0 != bxDual_cmd_uart_ofsEndFileTransf(m_portName.toLocal8Bit().data(), nBaudRateIndex)) qDebug() << ("bxDual_cmd_ofsEndFileTransf error");
 }
+
+void Screen::slotDelStaticArea()
+{
+    // bxDual_program_deleteProgram();
+    // bxDual_program_freeBuffer(&program);
+}
+
+void Screen::slotSetLuminance(int brightnessI)
+{
+    Ouint8 brightness = brightnessI;
+    Brightness brightnessB = {0
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness
+      , brightness, brightness, brightness, brightness, brightness, brightness, brightness, brightness};
+
+    brightnessB.BrightnessMode = 0;
+
+    bxDual_cmd_setBrightness_uart(m_portName.toLocal8Bit().data(), 2, &brightnessB);
+}

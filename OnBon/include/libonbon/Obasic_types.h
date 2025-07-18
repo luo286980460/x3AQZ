@@ -32,11 +32,20 @@ typedef unsigned short			Ouint16;	//!< unsigned 16-bit
 typedef short			        Oint16;		//!< signed 16-bit 
 typedef unsigned int			Ouint32;	//!< unsigned 32-bit
 typedef int			            Oint32;		//!< signed 32-bit
-typedef unsigned long long      Ouint64;        //!< unsigned 64-bit
-typedef long long               Oint64;         //!< singed 64-bit
+typedef unsigned long long      Ouint64;    //!< unsigned 64-bit
+typedef long long               Oint64;     //!< singed 64-bit
 typedef float		            Ofloat32;	//!< 32-bit floating point
 typedef double                  Ofloat64;	//!< 64-bit double precision FP
 typedef bool                    Obool;
+
+//add NULL define,because in windows ide usualy this.
+#undef NULL
+#if defined(__cplusplus)
+#define NULL 0
+#else
+#define NULL ((void *)0)
+#endif
+
 #ifndef TRUE
 #  define TRUE		1				//!< true
 #endif
@@ -44,6 +53,9 @@ typedef bool                    Obool;
 #ifndef FALSE
 #  define FALSE		0				//!< false
 #endif
+
+
+
 
 /*@}*/
 

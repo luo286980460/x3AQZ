@@ -103,6 +103,25 @@ void MyHttpServerOnBon::createHttpserver(int port)
         return respReturnJson(resp, parseScreenText2Static(jsonObj, backJson));
     });
 
+    m_router->POST("/screen/setBrightness", [this](HttpRequest* req, HttpResponse* resp) {
+
+        //获取json数据包
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(QString::fromStdString(req->body).toUtf8());
+        QJsonObject jsonObj = jsonDoc.object();
+
+        QJsonObject backJson;
+        backJson["code"] = 200;
+        backJson["msg"] = "success";
+
+        // 判断头
+        if(!headerIsOk(req, backJson)){
+            return respReturnJson(resp, backJson);
+        }
+
+        return respReturnJson(resp, parseScreenSetBrightness(jsonObj, backJson));
+    });
+
+
     m_router->POST("/screen/test", [this](HttpRequest* req, HttpResponse* resp) {
 
         //获取json数据包
@@ -623,4 +642,44 @@ QJsonObject MyHttpServerOnBon::parseScreenText2Static(QJsonObject json, QJsonObj
                              json.value("DisplayMode").toInt(),
                              json.value("Speed").toInt());
     return backJson;
+}
+
+QJsonObject MyHttpServerOnBon::parseScreenSetBrightness(QJsonObject json, QJsonObject &backJson)
+{
+    // nBaudRateIndex
+    if(json.find("nBaudRateIndex") == json.end()) {
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "缺少必要参数 nBaudRateIndex ";
+        return backJson;
+    }else if(!json.value("nBaudRateIndex").isDouble()){
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "nBaudRateIndex 数据类型错误 应该为 int";
+        return backJson;
+    }else if(json.value("nBaudRateIndex").toInt() != 1 && json.value("nBaudRateIndex").toInt() != 2){
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "nBaudRateIndex 只能为 1/2 [1=9600/2=57600]";
+        return backJson;
+    }
+
+    // brightness
+    int brightness = json.value("brightness").toInt();
+    if(json.find("brightness") == json.end()) {
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "缺少必要参数 brightness ";
+        return backJson;
+    }else if(!json.value("brightness").isDouble()){
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "brightness 数据类型错误 应该为 int";
+        return backJson;
+    }else if(brightness < 0 || brightness > 15){
+        backJson.find("code").value() = 1;
+        backJson.find("msg").value() = "brightness 只能为 0~255]";
+        return backJson;
+    }
+
+    emit signalSetLuminance(brightness);
+    backJson.find("code").value() = 0;
+    backJson.find("msg").value() = "brightness 设置成功";
+    return backJson;
+
 }

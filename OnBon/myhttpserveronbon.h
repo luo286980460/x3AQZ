@@ -49,6 +49,10 @@ private:
     QJsonObject parseScreenText2Static(QJsonObject json,           // 数据解析
                                         QJsonObject& backJson);
 
+    // /screen/setBrightness
+    QJsonObject parseScreenSetBrightness(QJsonObject json,           // 数据解析
+                                         QJsonObject& backJson);
+
     // ********** 屏幕控制 路由结束 **********
 
 signals:
@@ -64,6 +68,7 @@ signals:
                             int width, int height, QString fontName, int fontSize,
                             QString content, int Halign, int Valign, int DisplayMode,
                             int Speed);
+    void signalSetLuminance(int brightnessI);
 
 public slots:
 

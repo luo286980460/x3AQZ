@@ -33,7 +33,19 @@
 	"I2CManager":{
 		"interval":5000,
 		"address":35,
-		"deviceName":"/dev/i2c-3"
+		"deviceName":"/dev/i2c-3",
+		"luxLevel":[
+			{
+				"value":[1, 100],
+				"screenBrightness":10,
+				"volume":5,
+			},
+			{
+				"value":[100, 200],
+				"screenBrightness":15,
+				"volume":10,
+			},
+		]
 	},
 	"DetectionMode":{
 		"portName":"/dev/ttyCH343USB0",
@@ -44,5 +56,12 @@
 	"Gps":{
 		"portName":"/dev/ttyCH343USB3",
 		"baudRate":115200
+	},
+	"APlayer":{
+		"port":8888,
+		"playList":[
+			"1.pcm",
+			"2.pcm"
+		]
 	}
 }
