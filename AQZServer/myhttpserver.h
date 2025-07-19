@@ -58,7 +58,7 @@ private:
     bool missingScreenOpenControl(const QJsonObject& json,      // /screen/openControl 是否缺少必要参数
                                   QJsonObject& backJson);
 public:
-    QJsonObject parseScreenOpenControl(const QJsonObject& json,     // 解析 /screen/openControl
+    QJsonObject parseScreenOpenControl(const QJsonObject& json, // 解析 /screen/openControl
                                            QJsonObject& backJson);
 
 signals:
@@ -74,6 +74,8 @@ public:
 
 private:
     QByteArray m_aesKey = "Utis00000000LsCb";
+    int m_volume = 10;
+    int m_screenBrightness = 15;
 };
 
 

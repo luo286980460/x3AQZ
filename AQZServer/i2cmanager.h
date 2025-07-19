@@ -18,6 +18,7 @@ public:
 signals:
     void signalInitWork();
     void signalUpdateI2CData(QByteArray data);
+    void signalUpdateVolumeAndBrightness(int volume, int screenBrightness);
 
 private:
     QThread m_workerThread;     // kafka 工作线程

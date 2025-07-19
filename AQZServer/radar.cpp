@@ -10,6 +10,11 @@ Radar::Radar(QJsonObject& cfgJson, QObject *parent)
     init(cfgJson);
 }
 
+void Radar::setPriority(e_triggerScreenPriority Priority)
+{
+    m_currentTriggerScreenPriority = Priority;
+}
+
 void Radar::init(QJsonObject &cfgJson)
 {
     m_serialPort = new QSerialPort(this);
@@ -68,8 +73,9 @@ void Radar::slotRead()
         return;
     }
 
-
     int currentSpeed = (int)dataList.at(1).toFloat();
+
+    // 如果跟上次速度相同不处理
     if(m_lastSpeed == currentSpeed){
         return;
     }
@@ -78,15 +84,26 @@ void Radar::slotRead()
     m_lastSpeed = currentSpeed;
     dataJson.insert("speed", m_lastSpeed);
 
-    // if(speedingState != m_lastSpeedingState){
-    //     qDebug() << "speed:  " << currentSpeed;
-    //     signalSendSpeedProgram2OnbonDown(speedingState ? m_ownProgram.speedingContent : m_ownProgram.normalContent,
-    //                                      speedingState ? m_ownProgram.speedingContenttColor : m_ownProgram.normalContentColor);
-    // }
+    // 更新下半部分节目
+    if(m_currentTriggerScreenPriority != RADAR){    // 如果当前不是雷达节目
+        signalSendSpeedProgram2OnbonDown(speedingState ? m_ownProgram.speedingContent : m_ownProgram.normalContent,
+                                         speedingState ? m_ownProgram.speedingContenttColor : m_ownProgram.normalContentColor);
+    }else{  // 如果当前是雷达节目
+        if(speedingState != m_lastSpeedingState){   // 与上次超速状态不一样, 更新下半部分节目
+            signalSendSpeedProgram2OnbonDown(speedingState ? m_ownProgram.speedingContent : m_ownProgram.normalContent,
+                                             speedingState ? m_ownProgram.speedingContenttColor : m_ownProgram.normalContentColor);
+        }
+    }
+
+    // 更新语音节目
+    if(speedingState && !m_lastSpeedingState){  // 如果是超速状态, 发送语音节目
+        emit signalPlaySpeedingAudio();
+    }else if(!speedingState && m_lastSpeedingState){
+        emit signalStopSpeedingAudio();
+    }
+
     m_lastSpeedingState = speedingState;
 
-    signalSendSpeedProgram2OnbonDown(speedingState ? m_ownProgram.speedingContent : m_ownProgram.normalContent,
-                                     speedingState ? m_ownProgram.speedingContenttColor : m_ownProgram.normalContentColor);
     emit signalSendSpeedProgram2OnbonUp(QString::number(m_lastSpeed), speedingState ? 1 : 2);
 
     // 给其他端发送节目

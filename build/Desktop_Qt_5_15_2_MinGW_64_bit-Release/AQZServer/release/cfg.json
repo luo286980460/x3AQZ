@@ -4,7 +4,12 @@
 	"heartBeatTopic":"LS_TEST1",
 	"onBonServerPort":23332,
 	"kafkaServerPort":23333,
+	"aPlayerServerPort":8888,
 	"back2DefaultProgramTime":5000,
+	"speedingAudioId":0,
+	"speedingAudioIdTimes":999999,
+	"luraAudioId":1,
+	"luraAudioIdTimes":999999,
 	"HttpServer":{
 		"port":23331, 
 		"defaultProgram":{
@@ -31,9 +36,22 @@
 		}
 	},
 	"I2CManager":{
-		"interval":5000,
+		"interval":5,
+		"times":36,
 		"address":35,
-		"deviceName":"/dev/i2c-3"
+		"deviceName":"/dev/i2c-3",
+		"luxLevel":[
+			{
+				"value":[1, 100],
+				"screenBrightness":10,
+				"volume":5
+			},
+			{
+				"value":[101, 200],
+				"screenBrightness":15,
+				"volume":10
+			}
+		]
 	},
 	"DetectionMode":{
 		"portName":"/dev/ttyCH343USB0",
@@ -44,5 +62,13 @@
 	"Gps":{
 		"portName":"/dev/ttyCH343USB3",
 		"baudRate":115200
+	},
+	"APlayer":{
+		"port":8888,
+		"playList":[
+			"1.pcm",
+			"2.pcm",
+			"3.pcm"
+		]
 	}
 }

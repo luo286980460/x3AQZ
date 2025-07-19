@@ -16,9 +16,20 @@
 #include "myhttpserver.h"
 #include "radar.h"
 
-#define CFG_JSON        "/cfg.json"
-#define TEXT_2_DYNAMIC  "/screen/text2Dynamic"      // 发送动态区节目接口
-#define TEXT_2_STATIC   "/screen/text2Static"       // 发送静态区节目接口
+#define CFG_JSON            "/cfg.json"
+
+// screen
+#define TEXT_2_DYNAMIC      "/screen/text2Dynamic"      // 发送动态区节目接口
+#define TEXT_2_STATIC       "/screen/text2Static"       // 发送静态区节目接口
+#define SET_BRIGHTTNESS     "/screen/setBrightness"     // 更新亮度
+
+// aPlayer
+#define APLAYER_SET_VOLUME  "/setVolume"                // 设置音量
+#define APLAYER_SET_LOOP    "/setLoop"                  // 设置循环模式
+#define APLAYER_ADD_AUDIOS  "/addAudio"                 // 添加文件到播放列表
+#define APLAYER_DEL_AUDIOS  "/clearPlayList"            // 清空播放列表
+#define APLAYER_PLAY_AUDIO  "/playIndex"                // 根据下标播放音频
+#define APLAYER_STOP        "/play/stop"                // 根据下标播放音频
 
 MyMain::MyMain(QObject *parent)
     : QObject{parent}
@@ -72,10 +83,23 @@ void MyMain::initTimer()
         }else if(m_back2DefaultProgramTimeCount == m_back2DefaultProgramTime){
             sendPostRequestOnbonDefaultProgream();
             m_back2DefaultProgramTimeCount++;
-            m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT_PROGRAM;
+            setTriggerScreenPriority(e_triggerScreenPriority::DEFAULT_PROGRAM);
+
+            // 关闭语音播放
+            m_stopAudioLagCount = 0;
         }
 
-        // qDebug() << "post:" << json;
+        // 延迟关闭语音
+        //qDebug() << "m_stopAudioLagCount : " << m_stopAudioLagCount << " .. " << m_stopAudioLagValue;
+        if(m_stopAudioLagCount == m_stopAudioLagValue){
+            // 发送语音节目
+            QJsonObject jsonDataAudio;
+            sendPostRequestAPlayer(jsonDataAudio, APLAYER_STOP);
+            m_stopAudioLagCount++;
+        }else if(m_stopAudioLagCount < m_stopAudioLagValue){
+            m_stopAudioLagCount++;
+        }
+
     });
     m_timer->setInterval(1000);
 
@@ -95,10 +119,12 @@ void MyMain::init()
     QJsonObject cfgI2CManager = cfgJson.value("I2CManager").toObject();
     QJsonObject cfgDetectionMode = cfgJson.value("DetectionMode").toObject();
     QJsonObject cfgGps = cfgJson.value("Gps").toObject();
+    QJsonObject cfgAPlayer = cfgJson.value("APlayer").toObject();
 
     if(httpServerCfgIsOk(cfgHttpServer)){
         initHttpServer(cfgHttpServer);
     }
+
     if(radarCfgIsOk(cfgRadar)){
         initRadar(cfgRadar);
     }
@@ -106,11 +132,17 @@ void MyMain::init()
     if(I2CManagerCfgIsOk(cfgI2CManager)){
         initI2CManager(cfgI2CManager);
     }
+
     if(detectionModeCfgIsOk(cfgDetectionMode)){
         initDetectionMode(cfgDetectionMode);
     }
+
     if(gpsCfgIsOk(cfgGps)){
         initGps(cfgGps);
+    }
+
+    if(aPlayerCfgIsOk(cfgAPlayer)){
+        initAPlayer(cfgAPlayer);
     }
 
     if(m_radar && m_detectionMode){
@@ -208,6 +240,16 @@ bool MyMain::loadCfg(QJsonObject& cfgJson)
     }
     m_kafkaServerPort = cfgJson.value("kafkaServerPort").toInt();
 
+    // aPlayerServerPort 配置属性是否存在
+    if(cfgJson.find("aPlayerServerPort") == cfgJson.end()){
+        qCritical() << "error cfgJson: aPlayerServerPort json miss";
+        return false;
+    }else if(!cfgJson.value("aPlayerServerPort").isDouble()){
+        qCritical() << "error cfgJson: aPlayerServerPort not a int";
+        return false;
+    }
+    m_aPlayerServerPort = cfgJson.value("aPlayerServerPort").toInt();
+
     // httpServer 配置属性是否存在
     if(cfgJson.find("HttpServer") == cfgJson.end()){
         qCritical() << "error cfgJson: httpServer json miss";
@@ -243,6 +285,47 @@ bool MyMain::loadCfg(QJsonObject& cfgJson)
         qCritical() << "error cfgJson: DetectionMode not a json";
         return false;
     }
+
+    // speedingAudioId 配置属性是否存在
+    if(cfgJson.find("speedingAudioId") == cfgJson.end()){
+        qCritical() << "error cfgJson: speedingAudioId json miss";
+        return false;
+    }else if(!cfgJson.value("speedingAudioId").isDouble()){
+        qCritical() << "error cfgJson: speedingAudioId not a int";
+        return false;
+    }
+    m_speedingAudioId = cfgJson.value("speedingAudioId").toInt();
+
+    // speedingAudioIdTimes 配置属性是否存在
+    if(cfgJson.find("speedingAudioIdTimes") == cfgJson.end()){
+        qCritical() << "error cfgJson: speedingAudioIdTimes json miss";
+        return false;
+    }else if(!cfgJson.value("speedingAudioIdTimes").isDouble()){
+        qCritical() << "error cfgJson: speedingAudioIdTimes not a int";
+        return false;
+    }
+    m_speedingAudioIdTimes = cfgJson.value("speedingAudioIdTimes").toInt();
+
+    // luraAudioId 配置属性是否存在
+    if(cfgJson.find("luraAudioId") == cfgJson.end()){
+        qCritical() << "error cfgJson: luraAudioId json miss";
+        return false;
+    }else if(!cfgJson.value("luraAudioId").isDouble()){
+        qCritical() << "error cfgJson: luraAudioId not a int";
+        return false;
+    }
+    m_luraAudioId = cfgJson.value("luraAudioId").toInt();
+
+    // luraAudioIdTimes 配置属性是否存在
+    if(cfgJson.find("luraAudioIdTimes") == cfgJson.end()){
+        qCritical() << "error cfgJson: luraAudioIdTimes json miss";
+        return false;
+    }else if(!cfgJson.value("luraAudioIdTimes").isDouble()){
+        qCritical() << "error cfgJson: luraAudioIdTimes not a int";
+        return false;
+    }
+    m_luraAudioIdTimes = cfgJson.value("luraAudioIdTimes").toInt();
+
     return true;
 }
 
@@ -422,30 +505,84 @@ bool MyMain::radarCfgIsOk(QJsonObject &cfgRadar)
 
 bool MyMain::I2CManagerCfgIsOk(QJsonObject &cfgI2CManager)
 {
-    // 检查属性 portName
+    // 检查属性 interval
+    if(cfgI2CManager.find("interval") == cfgI2CManager.end()){
+        qDebug() << "配置文件 I2CManager 属性内 interval int";
+        return false;
+    }else if(!cfgI2CManager.value("interval").isDouble()){
+        qDebug() << "配置文件 I2CManager 属性内 interval 类型错误 类型应为 int";
+        return false;
+    }
+
+    // 检查属性 address
     if(cfgI2CManager.find("address") == cfgI2CManager.end()){
-        qDebug() << "配置文件TransmittanceMeter属性内 address int";
+        qDebug() << "配置文件 I2CManager 属性内 address int";
         return false;
     }else if(!cfgI2CManager.value("address").isDouble()){
-        qDebug() << "配置文件TransmittanceMeter属性内 address类型错误 类型应为int";
+        qDebug() << "配置文件 I2CManager 属性内 address类型错误 类型应为int";
         return false;
     }
     int address = cfgI2CManager.value("address").toInt();
     if(address != 35 && address != 40){
-        qDebug() << "配置文件TransmittanceMeter属性内 address值只能为 35[0x23]/64[0x40]";
+        qDebug() << "配置文件 I2CManager 属性内 address 值只能为 35[0x23]/64[0x40]";
         return false;
     }
 
-    // 检查属性 baudRate
+    // 检查属性 deviceName
     if(cfgI2CManager.find("deviceName") == cfgI2CManager.end()){
-        qDebug() << "配置文件TransmittanceMeter属性内 缺少deviceName 类型string";
+        qDebug() << "配置文件 I2CManager 属性内 缺少 deviceName 类型string";
         return false;
     }else if(!cfgI2CManager.value("deviceName").isString()){
-        qDebug() << "配置文件TransmittanceMeterr属性内 deviceName类型错误 类型应为string";
+        qDebug() << "配置文件 I2CManager 属性内 deviceName 类型错误 类型应为string";
         return false;
     }
     QString deviceName = cfgI2CManager.value("deviceName").toString();
 
+
+    // 检查属性 luxLevel
+    if(cfgI2CManager.find("luxLevel") == cfgI2CManager.end()){
+        qDebug() << "配置文件 I2CManager 属性内 缺少 luxLevel 类型 jsonArray";
+        return false;
+    }else if(!cfgI2CManager.value("luxLevel").isArray()){
+        qDebug() << "配置文件 I2CManager 属性内 luxLevel 类型错误 类型应为 jsonArray";
+        return false;
+    }
+    QJsonArray luxLevelArray = cfgI2CManager.value("luxLevel").toArray();
+    foreach (QJsonValue luxLevel, luxLevelArray) {
+        if(!luxLevel.isObject()){
+            qDebug() << "配置文件 I2CManager->luxLevel->value 属性 类型错误 类型应为 json";
+            return false;
+        }
+        QJsonObject luxLevelJson = luxLevel.toObject();
+        if(!luxLevelJson.value("volume").isDouble()){
+            qDebug() << "配置文件 I2CManager->luxLevel->json->volume 属性 类型错误 类型应为 int";
+            return false;
+        }else if(!luxLevelJson.value("screenBrightness").isDouble()){
+            qDebug() << "配置文件 I2CManager->luxLevel->json->screenBrightness 属性 类型错误 类型应为 int";
+            return false;
+        }
+
+        int volume = luxLevelJson.value("volume").toInt();
+        if(volume < 1 || volume > 10){
+            qDebug() << "配置文件 I2CManager->luxLevel->json->volume 属性 值错误 1~10";
+            return false;
+        }
+
+        int screenBrightness = luxLevelJson.value("screenBrightness").toInt();
+        if(screenBrightness < 0 || screenBrightness > 15){
+            qDebug() << "配置文件 I2CManager->luxLevel->json->screenBrightness 属性 值错误 0~15";
+            return false;
+        }
+    }
+
+    // 检查属性 times
+    if(cfgI2CManager.find("times") == cfgI2CManager.end()){
+        qDebug() << "配置文件 I2CManager 属性内 times int";
+        return false;
+    }else if(!cfgI2CManager.value("times").isDouble()){
+        qDebug() << "配置文件 I2CManager 属性内 times 类型错误 类型应为 int";
+        return false;
+    }
 
     return true;
 }
@@ -536,6 +673,41 @@ bool MyMain::gpsCfgIsOk(QJsonObject &cfgGps)
     return true;
 }
 
+bool MyMain::aPlayerCfgIsOk(QJsonObject &cfgAPlayer)
+{
+    // 检查属性 port
+    if(cfgAPlayer.find("port") == cfgAPlayer.end()){
+        qDebug() << "配置文件 APlayer 属性内 缺少 port 类型int";
+        return false;
+    }else if(!cfgAPlayer.value("port").isDouble()){
+        qDebug() << "配置文件 APlayer 属性内 port 类型错误 类型应为int";
+        return false;
+    }
+    int port = cfgAPlayer.value("port").toInt();
+    if(port < 1000 || port > 65535){
+        qCritical() << "配置文件 APlayer 属性内 port 值异常 1000~65535";
+        return false;
+    }
+
+    // 检查属性 playList
+    if(cfgAPlayer.find("playList") == cfgAPlayer.end()){
+        qDebug() << "配置文件 APlayer 属性内 缺少 playList 类型 array";
+        return false;
+    }else if(!cfgAPlayer.value("port").isDouble()){
+        qDebug() << "配置文件 APlayer 属性内 playList 类型错误 类型应为 array";
+        return false;
+    }
+    QJsonArray playList = cfgAPlayer.value("playList").toArray();
+    for (int i = 0; i < playList.size(); ++i) {
+        if(!playList.at(i).isString()){
+            qDebug() << "配置文件 APlayer->playList  类型错误 类型应为 stringList";
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void MyMain::initHttpServer(QJsonObject &cfgHttpServer)
 {
     m_httpserver = new MyHttpServer(cfgHttpServer, this);
@@ -549,6 +721,8 @@ void MyMain::initRadar(QJsonObject &cfgRadar)
     m_radar = new Radar(cfgRadar, this);
     connect(m_radar, &Radar::signalSendSpeedProgram2OnbonUp, this, &MyMain::slotSendSpeedProgram2OnbonUp);
     connect(m_radar, &Radar::signalSendSpeedProgram2OnbonDown, this, &MyMain::slotSendSpeedProgram2OnbonDown);
+    connect(m_radar, &Radar::signalPlaySpeedingAudio, this, &MyMain::slotPlaySpeedingAudio);
+    connect(m_radar, &Radar::signalStopSpeedingAudio, this, &MyMain::slotStopSpeedingAudio);
 }
 
 void MyMain::initI2CManager(QJsonObject &cfgI2CManager)
@@ -563,6 +737,8 @@ void MyMain::initI2CManager(QJsonObject &cfgI2CManager)
         m_data2BackServerHeartbeat["Lux"] = json.value("Lux").toString();
     });
 
+    connect(m_I2CManager, &I2CManager::signalUpdateVolumeAndBrightness, this, &MyMain::slotUpdateVolumeAndBrightness);
+
     m_I2CManager->start();
 }
 
@@ -575,6 +751,17 @@ void MyMain::initDetectionMode(QJsonObject &cfgDetectionMode)
 void MyMain::initGps(QJsonObject &cfgGps)
 {
     m_gps = new GPS(cfgGps, this);
+}
+
+void MyMain::initAPlayer(QJsonObject &cfgAPlayer)
+{
+    // 将可播放内容添加到播放列表
+    QJsonObject json;
+    json.insert("data", cfgAPlayer.value("playList").toArray());
+
+    sendPostRequestAPlayer(json, APLAYER_DEL_AUDIOS);
+
+    sendPostRequestAPlayer(json, APLAYER_ADD_AUDIOS);
 }
 
 void MyMain::sendPostRequestKafka(QJsonObject &json)
@@ -605,9 +792,6 @@ void MyMain::sendPostRequestKafka(QJsonObject &json)
 
 void MyMain::sendPostRequestOnbon(QJsonObject &json, QString api)
 {
-    // 重置恢复默认节目的计数
-    m_back2DefaultProgramTimeCount = 0;
-
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
 
     // 设置请求 URL 和 headers
@@ -633,8 +817,36 @@ void MyMain::sendPostRequestOnbon(QJsonObject &json, QString api)
     });
 }
 
+void MyMain::sendPostRequestAPlayer(QJsonObject &json, QString api)
+{
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+
+    // 设置请求 URL 和 headers
+    QNetworkRequest request;
+    request.setUrl(QUrl(QString("http://127.0.0.1:%1%2").arg(m_aPlayerServerPort).arg(api)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    // qDebug() << json;
+    // 发送 POST 请求
+    QNetworkReply *reply = manager->post(request, QJsonDocument(json).toJson());
+
+    // 异步处理响应
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            // qDebug() << "Response:" << reply->readAll();
+            // qDebug() << "Response: success";
+        } else {
+            // qDebug() << "Error:" << reply->errorString();
+            qDebug() << "Error: failed";
+        }
+        reply->deleteLater();
+        manager->deleteLater();
+    });
+}
+
 void MyMain::sendPostRequestOnbonDefaultProgream()
 {
+    // 恢复默认节目
     QJsonObject jsonData;
     jsonData.insert("nBaudRateIndex", 2);
     jsonData.insert("areaId", 255);
@@ -677,12 +889,22 @@ void MyMain::SetDefaultProgam(QJsonObject &cfgHttpServer)
     sendPostRequestOnbon(jsonProgramData, TEXT_2_STATIC);
 }
 
+void MyMain::setTriggerScreenPriority(e_triggerScreenPriority Priority)
+{
+    m_triggerScreenPriority = Priority;
+    if(m_radar){
+        m_radar->setPriority(Priority);
+    }
+}
+
 void MyMain::slotOpenControl(QByteArray jsonData, bool open)
 {
     // 关闭管控
     if(!open){
-        m_triggerScreenPriority = e_triggerScreenPriority::DEFAULT_PROGRAM;
+        setTriggerScreenPriority(e_triggerScreenPriority::DEFAULT_PROGRAM);
+        // 设置默认节目的计数
         m_back2DefaultProgramTimeCount = m_back2DefaultProgramTime;
+
         m_controlState = false;
         m_heartBeatCount = m_heartBeatInterval-1;
         return;
@@ -690,7 +912,8 @@ void MyMain::slotOpenControl(QByteArray jsonData, bool open)
 
     // 开启管控
     QJsonObject json = QJsonDocument::fromJson(jsonData).object();
-    m_triggerScreenPriority = e_triggerScreenPriority::CONTROL;
+
+    setTriggerScreenPriority(e_triggerScreenPriority::CONTROL);
     sendPostRequestOnbonDefaultProgream();
     sendPostRequestOnbon(json, TEXT_2_DYNAMIC);
     m_controlState = true;
@@ -790,6 +1013,7 @@ void MyMain::slotPlayOtherLuaProgram(QByteArray jsonData)
         }
     }
 
+    // 发送动态区节目
     QJsonObject jsonDataP;
     jsonDataP.insert("nBaudRateIndex", 2);
     jsonDataP.insert("color", json.value("color").toInt());
@@ -806,9 +1030,19 @@ void MyMain::slotPlayOtherLuaProgram(QByteArray jsonData)
     jsonDataP.insert("DisplayMode", 1);
     jsonDataP.insert("Speed", 1);
 
-    m_back2DefaultProgramTimeCount = 0;   // 超时回默认节目
+    // 重置恢复默认节目的计数
+    m_back2DefaultProgramTimeCount = 0;
+
     sendPostRequestOnbon(json, TEXT_2_DYNAMIC);
-    m_triggerScreenPriority = e_triggerScreenPriority::OTHER_LUA;
+
+    // 发送语音节目
+    QJsonObject jsonDataAudio;
+    jsonDataAudio.insert("index", m_luraAudioId);
+    jsonDataAudio.insert("times", m_luraAudioIdTimes);
+    sendPostRequestAPlayer(jsonDataAudio, APLAYER_PLAY_AUDIO);
+
+    // 设置优先级
+    setTriggerScreenPriority(e_triggerScreenPriority::OTHER_LUA);
 }
 
 // void MyMain::slotPlayOtherLuaProgram(QByteArray jsonData)
@@ -845,7 +1079,11 @@ void MyMain::slotSendSpeedProgram2OnbonUp(QString speed, int color)
     jsonData.insert("DisplayMode", 1);
     jsonData.insert("Speed", 1);
     sendPostRequestOnbon(jsonData, TEXT_2_DYNAMIC);
-    m_triggerScreenPriority = e_triggerScreenPriority::RADAR;
+
+    // 重置恢复默认节目的计数
+    m_back2DefaultProgramTimeCount = 0;
+
+    setTriggerScreenPriority(e_triggerScreenPriority::RADAR);
 }
 
 void MyMain::slotSendSpeedProgram2OnbonDown(QString content, int color)
@@ -871,7 +1109,8 @@ void MyMain::slotSendSpeedProgram2OnbonDown(QString content, int color)
     jsonData.insert("DisplayMode", 1);
     jsonData.insert("Speed", 1);
     sendPostRequestOnbon(jsonData, TEXT_2_DYNAMIC);
-    m_triggerScreenPriority = e_triggerScreenPriority::RADAR;
+
+    setTriggerScreenPriority(e_triggerScreenPriority::RADAR);
 }
 
 void MyMain::slotUpdateGpsNE(QString N, QString E)
@@ -879,4 +1118,38 @@ void MyMain::slotUpdateGpsNE(QString N, QString E)
     QJsonArray jsonArray;
     jsonArray << N << E;
     m_data2BackServerHeartbeat["gps"] = jsonArray;
+}
+
+void MyMain::slotUpdateVolumeAndBrightness(int volume, int screenBrightness)
+{
+    QJsonObject json;
+    json.insert("nBaudRateIndex", 2);
+    json.insert("brightness", screenBrightness);
+
+    if(screenBrightness != m_lastScreenBrightness){
+        sendPostRequestOnbon(json, SET_BRIGHTTNESS);
+    }
+
+    json = {};
+
+    json.insert("volume", volume);
+    if(volume != m_lastVolume){
+        // sendPostRequestOnbon(json, SET_BRIGHTTNESS);
+        sendPostRequestAPlayer(json, APLAYER_SET_VOLUME);
+    }
+}
+
+void MyMain::slotPlaySpeedingAudio()
+{
+    // 发送语音节目
+    QJsonObject jsonDataAudio;
+    jsonDataAudio.insert("index", m_speedingAudioId);
+    jsonDataAudio.insert("times", m_speedingAudioIdTimes);
+    sendPostRequestAPlayer(jsonDataAudio, APLAYER_PLAY_AUDIO);
+    m_stopAudioLagCount = m_stopAudioLagValue+1;
+}
+
+void MyMain::slotStopSpeedingAudio()
+{
+    m_stopAudioLagCount = 0;
 }

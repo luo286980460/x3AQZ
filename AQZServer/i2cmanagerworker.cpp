@@ -4,6 +4,8 @@
 #include <QThread>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
 
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
@@ -13,26 +15,43 @@
 #define I2C_DEV "/dev/i2c-3"
 
 //  BH1750
-#define BH1750_DEV_ADDR 0x23
-#define BH1750_MODE 0x10        // 连续高精度模式
+#define BH1750_DEV_ADDR 0x23    // BH1750 I2C地址
+#define BH1750_MODE     0x10    // 连续高精度模式
 #define BH1750_POWER_ON 0x01    // 通电命令
-#define BH1750_RESET 0x07       // 复位命令
+#define BH1750_RESET    0x07    // 复位命令
 
 //  ina226
-#define INA226_ADDR 0x40  // 默认I2C地址
-#define CAL_REG 0x05      // 校准寄存器
-#define SET_REG 0x00      // 配置寄存器
-#define SHUNT_V_REG 0x01  // 分流电压寄存器
-#define CURRENT_REG 0x04  // 电流寄存器
-#define VBUS_REG 0x02     // 读取电压寄存器（0x02）
-#define VSHUNT_REG 0x01   // 读取电压寄存器（0x01）
-#define POWER_REG 0x03    // 读取功率寄存器（0x01）
+#define INA226_ADDR     0x40    // ina226 I2C地址
+#define CAL_REG         0x05    // 校准寄存器
+#define SET_REG         0x00    // 配置寄存器
+#define SHUNT_V_REG     0x01    // 分流电压寄存器
+#define CURRENT_REG     0x04    // 电流寄存器
+#define VBUS_REG        0x02    // 读取电压寄存器（0x02）
+#define VSHUNT_REG      0x01    // 读取电压寄存器（0x01）
+#define POWER_REG       0x03    // 读取功率寄存器（0x01）
+
+// 默认数据
+#define DEFAULT_VOLUME 5                // 默认语音音量
+#define DEFAULT_SCREEN_BRIGHTNESS 10    // 默认屏幕亮度
 
 
-I2CManagerWorker::I2CManagerWorker(int interval, QObject *parent)
+I2CManagerWorker::I2CManagerWorker(QJsonObject& cfgJoson, QObject *parent)
     : QObject{parent}
-    , m_interval(interval)
 {
+    m_interval = cfgJoson.value("interval").toInt();
+    m_times = cfgJoson.value("times").toInt();
+
+    foreach (QJsonValue luxLevelVule, cfgJoson.value("luxLevel").toArray()) {
+        qDebug() << " ********************************************************************** ";
+        QJsonObject luxLevelJson = luxLevelVule.toObject();
+        s_LuxLevel luxLevel;
+        qDebug() << "screenBrightness: " << (luxLevel.screenBrightness = luxLevelJson.value("screenBrightness").toInt());
+        qDebug() << "volume: " << (luxLevel.volume = luxLevelJson.value("volume").toInt());
+        qDebug() << "miniLux: " << (luxLevel.miniLux = luxLevelJson.value("value").toArray().at(0).toInt());
+        qDebug() << "maxLux: " << (luxLevel.maxLux = luxLevelJson.value("value").toArray().at(1).toInt());
+        m_luxLevelList << luxLevel;
+        qDebug() << " ********************************************************************** ";
+    };
 
 }
 
@@ -64,12 +83,12 @@ float I2CManagerWorker::readLux()
 void I2CManagerWorker::initTimer()
 {
     m_timer = new QTimer;
-    m_timer->setInterval(m_interval);
+    m_timer->setInterval(m_interval*1000);
     connect(m_timer, &QTimer::timeout, this, [this]{
         // 电压    0x40 /dev/i2c-3
         // 电流 注意: 电流<=0.1A       结果: 电压+0.3v
-        // 电流>0.1A && 电流<8A            结果: 电压+(电流A * 0.04 + 0.3)
-        // 电流>8A                        结果: 电压+0.62v
+        // 电流>0.1A && 电流<8A       结果: 电压+(电流A * 0.04 + 0.3)
+        // 电流>8A                    结果: 电压+0.62v
 
         // readINA226();
         float current = get_current();
@@ -84,7 +103,19 @@ void I2CManagerWorker::initTimer()
         }
         float shuntVoltage = read_shunt_voltage()*1000;
         float power = read_power();
-        float Lux = readLux();
+        int lux = (int)readLux();
+
+        if(m_luxList.size() >= m_times){
+            m_luxList.removeFirst();
+        }
+
+        m_luxList << lux;
+
+        lux = 0;
+        for(int i=0; i<m_luxList.size(); i++){
+            lux += m_luxList.at(i);
+        }
+        lux = lux / m_luxList.size();
 
         // qDebug() << "***********************";
         // qDebug() << QString("* 总线电压: %1").arg(busVoltage, 0, 'f', 4) << "*";
@@ -104,8 +135,12 @@ void I2CManagerWorker::initTimer()
         json.insert("shuntVoltage", QString("%1").arg(shuntVoltage, 0, 'f', 4));
         json.insert("current", QString("%1").arg(current, 0, 'f', 4));
         json.insert("power", QString("%1").arg(power, 0, 'f', 4));
-        json.insert("Lux", QString("%1").arg(Lux, 0, 'f', 4));
+        json.insert("Lux", QString("%1").arg(lux));
         emit signalUpdateI2CData(QJsonDocument(json).toJson());
+
+        if(getVolumeAndBrightnessFromLux(lux)){
+            emit signalUpdateVolumeAndBrightness(m_volume, m_screenBrightness);
+        }
         //qDebug() << json;
     });
     m_timer->start();
@@ -172,6 +207,23 @@ float I2CManagerWorker::read_power()
 {
     uint16_t raw_power = read_register(POWER_REG);  // 功率寄存器（0x03）
     return raw_power * 25 * m_ina226Info.current_lsb;  // LSB=25mW，转换为W
+}
+
+bool I2CManagerWorker::getVolumeAndBrightnessFromLux(int Lux)
+{
+    for(int i=0; i<m_luxLevelList.size(); i++){
+        int miniLux = m_luxLevelList.at(i).miniLux;
+        int maxLux = m_luxLevelList.at(i).maxLux;
+        if(Lux >= miniLux && Lux <= maxLux){
+            m_volume = m_luxLevelList.at(i).volume;
+            m_screenBrightness = m_luxLevelList.at(i).screenBrightness;
+            return true;
+        }
+    }
+
+    m_volume = DEFAULT_VOLUME;
+    m_screenBrightness = DEFAULT_SCREEN_BRIGHTNESS;
+    return false;
 }
 
 void I2CManagerWorker::init()

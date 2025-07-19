@@ -54,9 +54,9 @@ void MyHttpServer::createHttpserver(int port)
         Q_UNUSED(req);
 
         QJsonObject backJson;
-        backJson.insert("time", "最后更新时间：2025年07月18日");
+        backJson.insert("time", "最后更新时间：2025年07月19日");
         backJson.insert("Name", "尤特斯安全桩服务");
-        backJson.insert("Version", "0.4.0");
+        backJson.insert("Version", "0.5.0");
         backJson.insert("Msg", "alpha");
 
         resp->content_type = APPLICATION_JSON;

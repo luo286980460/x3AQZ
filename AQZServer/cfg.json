@@ -1,16 +1,21 @@
 {
 	"sbbh":"x3AQZ01",
-	"heartBeatInterval":9910000,
+	"heartBeatInterval":60,
 	"heartBeatTopic":"LS_TEST1",
 	"onBonServerPort":23332,
 	"kafkaServerPort":23333,
-	"back2DefaultProgramTime":5000,
+	"aPlayerServerPort":8888,
+	"back2DefaultProgramTime":5,
+	"speedingAudioId":0,
+	"speedingAudioIdTimes":3,
+	"luraAudioId":1,
+	"luraAudioIdTimes":2,
 	"HttpServer":{
 		"port":23331, 
 		"defaultProgram":{
-			"content":"默认一一默认二二",
+			"content":"三三三三四四四四",
 			"color":1, 
-			"signalScreen":false, 
+			"signalScreen":false
 		}
 	},
 	"Radar":{
@@ -20,7 +25,7 @@
 		"speedingThreshold":5,
 		"ownProgram":{
 			"normalContent":"正常驾驶",
-			"normalContentColor":1,
+			"normalContentColor":2,
 			"speedingContent":"超速驾驶",
 			"speedingContentColor":1
 		},
@@ -31,20 +36,21 @@
 		}
 	},
 	"I2CManager":{
-		"interval":5000,
+		"interval":3,
+		"times":36,
 		"address":35,
 		"deviceName":"/dev/i2c-3",
 		"luxLevel":[
 			{
-				"value":[1, 100],
-				"screenBrightness":10,
-				"volume":5,
+				"value":[1, 3000],
+				"screenBrightness":1,
+				"volume":1
 			},
 			{
-				"value":[100, 200],
+				"value":[3001, 1000000],
 				"screenBrightness":15,
-				"volume":10,
-			},
+				"volume":5
+			}
 		]
 	},
 	"DetectionMode":{
